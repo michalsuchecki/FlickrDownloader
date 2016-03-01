@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net;
+using System.Xml;
 
 namespace FlickDownloader
 {
@@ -16,7 +18,10 @@ namespace FlickDownloader
         public Flickr()
         {
             var request = getPhotos("72157661540487564");
-            Console.WriteLine(request);
+            //Console.WriteLine(request);
+            var data = GetWebContent(request);
+
+            Console.WriteLine(data);
         }
 
         private string BuildRequest(string method, IDictionary<string, string> parameters)
@@ -59,6 +64,35 @@ namespace FlickDownloader
 
         private void GetPhotosBuildUrl()
         {
+        }
+
+        private string GetWebContent(string uri)
+        {
+            if (String.IsNullOrEmpty(uri))
+            {
+                return "";
+            }
+            else
+            {
+                WebClient client = new WebClient();
+                client.Encoding = Encoding.UTF8;
+
+                var data = client.DownloadString(uri);
+
+                if (String.IsNullOrEmpty(data))
+                {
+                    return "";
+                }
+                else
+                {
+                    return data;
+                }
+            }
+        }
+
+        private void ParseeXMLDocument(string data)
+        {
+
         }
     }
 }
