@@ -2,15 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.Net;
 using System.Xml;
 
 namespace FlickDownloader
 {
     class Flickr
     {
-        private string Key = "ff7eff8dc769f13b5c59070f2420745c";
+        private string Key = "ff7eff8dc769f13b5c59070f2420745c"; // ff7eff8dc769f13b5c59070f2420745c
         private string Secret = "62941e2546ae47c0";
         private string User = "harupl";
 
@@ -18,11 +16,8 @@ namespace FlickDownloader
         public Flickr()
         {
             var request = getPhotos("72157661540487564");
-            //Console.WriteLine(request);
-            var data = GetWebContent(request);
 
-            ParseXMLDocument(data);
-            //Console.WriteLine(data);
+            ParseXMLDocument(request);
         }
 
         private string BuildRequest(string method, IDictionary<string, string> parameters)
@@ -67,68 +62,31 @@ namespace FlickDownloader
         {
         }
 
-        private string GetWebContent(string uri)
+        private void ParseXMLDocument(string uri)
         {
-            if (String.IsNullOrEmpty(uri))
+
+            var reader = XmlReader.Create(uri);
+
+            reader.ReadToFollowing("rsp");
+            reader.MoveToNextAttribute();
+
+            var status = reader.Value;
+
+            if (status.ToUpper() == "OK")
             {
-                return "";
+                //TODO: Parse document
             }
             else
             {
-                WebClient client = new WebClient();
-                client.Encoding = Encoding.UTF8;
-
-                var data = client.DownloadString(uri);
-
-                if (String.IsNullOrEmpty(data))
+                reader.ReadToFollowing("err");
+                var error_msg = "Response Error: ";
+                while (reader.MoveToNextAttribute())
                 {
-                    return "";
+                    error_msg += reader.Value + " ";
+                    
                 }
-                else
-                {
-                    return data;
-                }
+                Console.WriteLine(error_msg);
             }
-        }
-
-        private void ParseXMLDocument(string data)
-        {
-            XmlDocument doc = new XmlDocument();
-            doc.LoadXml(data);
-
-            var rsp_node = doc.SelectSingleNode("/rsp");
-
-            if (rsp_node != null && rsp_node.Attributes.Count > 0)
-            {
-                var attr = rsp_node.Attributes.Item(0);
-
-                if (attr.Name == "stat")
-                {
-                    if (attr.Value == "ok")
-                    {
-                        // TODO: Parse document
-                    }
-                    else
-                    {
-                        var error = rsp_node.SelectSingleNode("err");
-
-                        var error_msg = "Response Error: ";
-                        foreach (XmlAttribute err_attr in error.Attributes)
-                        {
-                            error_msg += err_attr.Value + " ";
-                        }
-                        Console.WriteLine(error_msg);
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("ERROR - ParseXMLDocument - missing 'stat' attribute");
-                    return;
-                }
-
-            }
-
-            //Console.WriteLine(rsp_node.InnerText);
         }
     }
 }
