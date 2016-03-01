@@ -9,8 +9,8 @@ namespace FlickDownloader
     class Flickr
     {
         private string Key = "ff7eff8dc769f13b5c59070f2420745c"; // ff7eff8dc769f13b5c59070f2420745c
-        private string Secret = "62941e2546ae47c0";
-        private string User = "harupl";
+        //private string Secret = "62941e2546ae47c0";
+        //private string User = "harupl";
 
         private string ApiUrl = @"https://api.flickr.com/services/rest/";
         public Flickr()
@@ -67,6 +67,9 @@ namespace FlickDownloader
 
             var reader = XmlReader.Create(uri);
 
+            var doc = new XmlDocument();
+            doc.Load(reader);
+
             reader.ReadToFollowing("rsp");
             reader.MoveToNextAttribute();
 
@@ -83,7 +86,6 @@ namespace FlickDownloader
                 while (reader.MoveToNextAttribute())
                 {
                     error_msg += reader.Value + " ";
-                    
                 }
                 Console.WriteLine(error_msg);
             }
