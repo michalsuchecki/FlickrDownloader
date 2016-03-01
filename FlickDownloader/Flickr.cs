@@ -21,7 +21,8 @@ namespace FlickDownloader
             //Console.WriteLine(request);
             var data = GetWebContent(request);
 
-            Console.WriteLine(data);
+            ParseXMLDocument(data);
+            //Console.WriteLine(data);
         }
 
         private string BuildRequest(string method, IDictionary<string, string> parameters)
@@ -90,9 +91,44 @@ namespace FlickDownloader
             }
         }
 
-        private void ParseeXMLDocument(string data)
+        private void ParseXMLDocument(string data)
         {
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(data);
 
+            var rsp_node = doc.SelectSingleNode("/rsp");
+
+            if (rsp_node != null && rsp_node.Attributes.Count > 0)
+            {
+                var attr = rsp_node.Attributes.Item(0);
+
+                if (attr.Name == "stat")
+                {
+                    if (attr.Value == "ok")
+                    {
+                        // TODO: Parse document
+                    }
+                    else
+                    {
+                        var error = rsp_node.SelectSingleNode("err");
+
+                        var error_msg = "Response Error: ";
+                        foreach (XmlAttribute err_attr in error.Attributes)
+                        {
+                            error_msg += err_attr.Value + " ";
+                        }
+                        Console.WriteLine(error_msg);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("ERROR - ParseXMLDocument - missing 'stat' attribute");
+                    return;
+                }
+
+            }
+
+            //Console.WriteLine(rsp_node.InnerText);
         }
     }
 }
