@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
@@ -9,16 +10,14 @@ namespace FlickDownloader
 {
     class Flickr
     {
-        private string Key = "ff7eff8dc769f13b5c59070f2420745"; // ff7eff8dc769f13b5c59070f2420745c
+        private string Key = "ff7eff8dc769f13b5c59070f2420745c"; // ff7eff8dc769f13b5c59070f2420745c
         //private string Secret = "62941e2546ae47c0";
         //private string User = "harupl";
 
         private string ApiUrl = @"https://api.flickr.com/services/rest/";
         public Flickr()
         {
-            var request = getPhotos("72157661540487564");
-
-            ParseXMLDocument(request);
+            GetPhotos("72157661540487564");
         }
 
         private string BuildRequest(string method, IDictionary<string, string> parameters)
@@ -46,6 +45,44 @@ namespace FlickDownloader
             }
         }
 
+        private string BuildPhotoUrl(string farm, string server, string id, string secret)
+        {
+            //https://farm{farm-id}.staticflickr.com/{server-id}/{id}_{o-secret}_o.(jpg|gif|png)
+            return String.Format("https://farm{0}.staticflickr.com/{1}/{2}_{3}.jpg",farm, server, id, secret);
+        }
+
+        public void GetPhotos(string gallery_id)
+        {
+            var request = getPhotos(gallery_id);
+
+            if (!String.IsNullOrEmpty(request))
+            {
+                var doc = GetXMLDocument(request);
+
+                if (doc != null)
+                {
+                    var photos = doc.Descendants("photo");
+
+                    var photos_list = (from photo in doc.Descendants("photo")
+                             select new
+                             {
+                                 id = photo.Attribute("id").Value,
+                                 secret = photo.Attribute("secret").Value,
+                                 server = photo.Attribute("server").Value,
+                                 farm = photo.Attribute("farm").Value
+                             }).ToList();
+
+                    foreach (var p in photos_list)
+                    {
+                        var image_url = BuildPhotoUrl(p.farm, p.server, p.id, p.secret);
+                        Console.WriteLine(image_url);
+                    }
+
+                }
+
+            }
+        }
+
         private string getPhotos(string gallery_id)
         {
             if (String.IsNullOrEmpty(gallery_id))
@@ -63,7 +100,7 @@ namespace FlickDownloader
         {
         }
 
-        private void ParseXMLDocument(string uri)
+        private XDocument GetXMLDocument(string uri)
         {
             XDocument doc = XDocument.Load(uri);
 
@@ -72,10 +109,12 @@ namespace FlickDownloader
 
             if (status_attr != null && status_attr.Value.ToLower() == "ok")
             {
+                //return status; 
+                return doc;
             }
             else
             {
-                var error =status.Element("err");
+                var error = status.Element("err");
 
                 if (error != null)
                 {
@@ -89,7 +128,7 @@ namespace FlickDownloader
                 }
             }
 
-            Console.WriteLine("break");
+            return null;
         }
     }
 }
