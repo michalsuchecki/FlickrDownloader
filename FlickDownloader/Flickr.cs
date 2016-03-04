@@ -64,17 +64,19 @@ namespace FlickDownloader
                     var photos = doc.Descendants("photo");
 
                     var photos_list = (from photo in doc.Descendants("photo")
-                             select new
-                             {
-                                 id = photo.Attribute("id").Value,
-                                 secret = photo.Attribute("secret").Value,
-                                 server = photo.Attribute("server").Value,
-                                 farm = photo.Attribute("farm").Value
+                                       select new
+                                       {
+                                           url = photo.Attribute("url_l").Value
+                                 //id = photo.Attribute("id").Value,
+                                 //secret = photo.Attribute("secret").Value,
+                                 //server = photo.Attribute("server").Value,
+                                 //farm = photo.Attribute("farm").Value
                              }).ToList();
 
                     foreach (var p in photos_list)
                     {
-                        var image_url = BuildPhotoUrl(p.farm, p.server, p.id, p.secret);
+                        //var image_url = BuildPhotoUrl(p.farm, p.server, p.id, p.secret);
+                        var image_url = p.url;
                         Console.WriteLine(image_url);
                     }
 
@@ -92,7 +94,9 @@ namespace FlickDownloader
             }
             else
             {
-                return BuildRequest("flickr.galleries.getPhotos", new Dictionary<string, string> { { "api_key", Key }, { "gallery_id", gallery_id } });
+                // NOTE: extras=url_o nie zwraca zawsze rezultatu :( 
+                // - oryginalny obraz ma inny secret
+                return BuildRequest("flickr.galleries.getPhotos", new Dictionary<string, string> { { "api_key", Key }, { "gallery_id", gallery_id }, {"extras","url_l" } });
             }
         }
 
