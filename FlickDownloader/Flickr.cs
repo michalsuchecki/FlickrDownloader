@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace FlickDownloader
 {
     class Flickr
     {
-        private string Key = "ff7eff8dc769f13b5c59070f2420745c"; // ff7eff8dc769f13b5c59070f2420745c
+        private string Key = "ff7eff8dc769f13b5c59070f2420745"; // ff7eff8dc769f13b5c59070f2420745c
         //private string Secret = "62941e2546ae47c0";
         //private string User = "harupl";
 
@@ -64,31 +65,31 @@ namespace FlickDownloader
 
         private void ParseXMLDocument(string uri)
         {
+            XDocument doc = XDocument.Load(uri);
 
-            var reader = XmlReader.Create(uri);
+            var status = doc.Element("rsp");
+            var status_attr = status.Attribute("stat");
 
-            var doc = new XmlDocument();
-            doc.Load(reader);
-
-            reader.ReadToFollowing("rsp");
-            reader.MoveToNextAttribute();
-
-            var status = reader.Value;
-
-            if (status.ToUpper() == "OK")
+            if (status_attr != null && status_attr.Value.ToLower() == "ok")
             {
-                //TODO: Parse document
             }
             else
             {
-                reader.ReadToFollowing("err");
-                var error_msg = "Response Error: ";
-                while (reader.MoveToNextAttribute())
+                var error =status.Element("err");
+
+                if (error != null)
                 {
-                    error_msg += reader.Value + " ";
+                    var error_msg = "Response Error:";
+                    foreach (var attr in error.Attributes())
+                    {
+                        error_msg += " " + attr.Value;
+                    }
+
+                    Console.WriteLine(error_msg);
                 }
-                Console.WriteLine(error_msg);
             }
+
+            Console.WriteLine("break");
         }
     }
 }
