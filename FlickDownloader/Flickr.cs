@@ -17,12 +17,19 @@ namespace FlickDownloader
         private string ApiUrl = @"https://api.flickr.com/services/rest/";
         public Flickr()
         {
-            var urls = GetPhotos("72157661540487564");
+            GetAlbumPhotos("72157647423407600");
 
-            foreach(var url in urls)
+            /*
+            var urls = GetPhotos("72157647423407600");
+
+            if (urls != null)
             {
-                Console.WriteLine(url.url);
+                foreach (var url in urls)
+                {
+                    Console.WriteLine(url.url);
+                }
             }
+            */
         }
 
         private string BuildRequest(string method, IDictionary<string, string> parameters)
@@ -46,6 +53,9 @@ namespace FlickDownloader
                     builder.Append(attr);
                 }
 
+#if DEBUG
+                Console.WriteLine(builder.ToString());
+#endif
                 return builder.ToString();
             }
         }
@@ -53,7 +63,7 @@ namespace FlickDownloader
         private string BuildPhotoUrl(string farm, string server, string id, string secret)
         {
             //https://farm{farm-id}.staticflickr.com/{server-id}/{id}_{o-secret}_o.(jpg|gif|png)
-            return String.Format("https://farm{0}.staticflickr.com/{1}/{2}_{3}.jpg",farm, server, id, secret);
+            return String.Format("https://farm{0}.staticflickr.com/{1}/{2}_{3}.jpg", farm, server, id, secret);
         }
 
         public dynamic GetPhotos(string gallery_id)
@@ -91,6 +101,41 @@ namespace FlickDownloader
             return null;
         }
 
+        public dynamic GetAlbumPhotos(string album_id)
+        {
+            var request = getAlbumPhotos(album_id);
+
+            if (!String.IsNullOrEmpty(request))
+            {
+                var doc = GetXMLDocument(request);
+
+                if (doc != null)
+                {
+                    var photos = doc.Descendants("photo");
+
+                    var photos_list = (from photo in doc.Descendants("photo")
+                                       select new
+                                       {
+                                           url = photo.Attribute("url_o").Value,
+                                           id = photo.Attribute("id").Value,
+                                           secret = photo.Attribute("secret").Value,
+                                           server = photo.Attribute("server").Value,
+                                           farm = photo.Attribute("farm").Value
+                                       });
+
+
+                    foreach (var p in photos_list)
+                    {
+                        //var image_url = BuildPhotoUrl(p.farm, p.server, p.id, p.secret);
+                        var image_url = p.url;
+                        Console.WriteLine(image_url);
+                    }
+                }
+            }
+
+            return null;
+        }
+
         private string getPhotos(string gallery_id)
         {
             if (String.IsNullOrEmpty(gallery_id))
@@ -102,7 +147,20 @@ namespace FlickDownloader
             {
                 // NOTE: extras=url_o nie zwraca zawsze rezultatu :( 
                 // - oryginalny obraz ma inny secret
-                return BuildRequest("flickr.galleries.getPhotos", new Dictionary<string, string> { { "api_key", Key }, { "gallery_id", gallery_id }, {"extras","url_l" } });
+                return BuildRequest("flickr.galleries.getPhotos", new Dictionary<string, string> { { "api_key", Key }, { "gallery_id", gallery_id }, { "extras", "url_l" } });
+            }
+        }
+
+        private string getAlbumPhotos(string album_id)
+        {
+            if (String.IsNullOrEmpty(album_id))
+            {
+                Console.WriteLine("ERROR: getAlbumPhotos - null 'album_id' parameter");
+                return "";
+            }
+            else
+            {
+                return BuildRequest("flickr.photosets.getPhotos", new Dictionary<string, string> { { "api_key", Key }, { "photoset_id", album_id }, { "extras", "url_o" } /*, { "user_id", User }*/ });
             }
         }
 
