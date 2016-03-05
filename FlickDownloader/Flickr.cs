@@ -17,7 +17,12 @@ namespace FlickDownloader
         private string ApiUrl = @"https://api.flickr.com/services/rest/";
         public Flickr()
         {
-            GetPhotos("72157661540487564");
+            var urls = GetPhotos("72157661540487564");
+
+            foreach(var url in urls)
+            {
+                Console.WriteLine(url.url);
+            }
         }
 
         private string BuildRequest(string method, IDictionary<string, string> parameters)
@@ -51,7 +56,7 @@ namespace FlickDownloader
             return String.Format("https://farm{0}.staticflickr.com/{1}/{2}_{3}.jpg",farm, server, id, secret);
         }
 
-        public void GetPhotos(string gallery_id)
+        public dynamic GetPhotos(string gallery_id)
         {
             var request = getPhotos(gallery_id);
 
@@ -67,22 +72,23 @@ namespace FlickDownloader
                                        select new
                                        {
                                            url = photo.Attribute("url_l").Value
-                                 //id = photo.Attribute("id").Value,
-                                 //secret = photo.Attribute("secret").Value,
-                                 //server = photo.Attribute("server").Value,
-                                 //farm = photo.Attribute("farm").Value
-                             }).ToList();
+                                           //id = photo.Attribute("id").Value,
+                                           //secret = photo.Attribute("secret").Value,
+                                           //server = photo.Attribute("server").Value,
+                                           //farm = photo.Attribute("farm").Value
+                                       });//.ToList();
 
-                    foreach (var p in photos_list)
-                    {
-                        //var image_url = BuildPhotoUrl(p.farm, p.server, p.id, p.secret);
-                        var image_url = p.url;
-                        Console.WriteLine(image_url);
-                    }
+                    //foreach (var p in photos_list)
+                    //{
+                    //    //var image_url = BuildPhotoUrl(p.farm, p.server, p.id, p.secret);
+                    //    var image_url = p.url;
+                    //    Console.WriteLine(image_url);
+                    //}
 
+                    return photos_list;
                 }
-
             }
+            return null;
         }
 
         private string getPhotos(string gallery_id)
