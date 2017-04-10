@@ -11,25 +11,10 @@ namespace FlickDownloader
     class Flickr
     {
         private string Key = "ff7eff8dc769f13b5c59070f2420745c"; // ff7eff8dc769f13b5c59070f2420745c
-        //private string Secret = "62941e2546ae47c0";
-        //private string User = "harupl";
-
         private string ApiUrl = @"https://api.flickr.com/services/rest/";
+
         public Flickr()
         {
-            GetAlbumPhotos("72157647423407600");
-
-            /*
-            var urls = GetPhotos("72157647423407600");
-
-            if (urls != null)
-            {
-                foreach (var url in urls)
-                {
-                    Console.WriteLine(url.url);
-                }
-            }
-            */
         }
 
         private string BuildRequest(string method, IDictionary<string, string> parameters)
@@ -60,10 +45,10 @@ namespace FlickDownloader
             }
         }
 
-        private string BuildPhotoUrl(string farm, string server, string id, string secret)
+        public string BuildPhotoUrl(string farm, string server, string id, string secret)
         {
             //https://farm{farm-id}.staticflickr.com/{server-id}/{id}_{o-secret}_o.(jpg|gif|png)
-            return String.Format("https://farm{0}.staticflickr.com/{1}/{2}_{3}.jpg", farm, server, id, secret);
+            return String.Format($"https://farm{farm}.staticflickr.com/{server}/{id}_{secret}.jpg");
         }
 
         public dynamic GetPhotos(string gallery_id)
@@ -101,7 +86,7 @@ namespace FlickDownloader
             return null;
         }
 
-        public dynamic GetAlbumPhotos(string album_id)
+        public IEnumerable<string> GetAlbumPhotos(string album_id)
         {
             var request = getAlbumPhotos(album_id);
 
@@ -116,20 +101,31 @@ namespace FlickDownloader
                     var photos_list = (from photo in doc.Descendants("photo")
                                        select new
                                        {
-                                           url = photo.Attribute("url_o").Value,
+                                           url = photo.Attribute("url_o")?.Value ?? String.Empty,
                                            id = photo.Attribute("id").Value,
                                            secret = photo.Attribute("secret").Value,
                                            server = photo.Attribute("server").Value,
                                            farm = photo.Attribute("farm").Value
                                        });
 
+                    var ImageLinks = new List<string>();
 
                     foreach (var p in photos_list)
                     {
-                        //var image_url = BuildPhotoUrl(p.farm, p.server, p.id, p.secret);
-                        var image_url = p.url;
-                        Console.WriteLine(image_url);
+                        var url = "";
+                        if(String.IsNullOrEmpty(p.url))
+                        {
+                            url = BuildPhotoUrl(p.farm, p.server, p.id, p.secret);
+                        }
+                        else
+                        {
+                            url = p.url;
+                        }
+
+                        ImageLinks.Add(url);
                     }
+
+                    return ImageLinks;
                 }
             }
 
