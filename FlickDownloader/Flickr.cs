@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FlickDownloader.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -60,34 +61,36 @@ namespace FlickDownloader
                 {
                     var photos = doc.Descendants("photo");
 
-                    var photos_list = (from photo in doc.Descendants("photo")
-                                       select new
-                                       {
-                                           url = photo.Attribute("url_o")?.Value ?? String.Empty,
-                                           id = photo.Attribute("id").Value,
-                                           secret = photo.Attribute("secret").Value,
-                                           server = photo.Attribute("server").Value,
-                                           farm = photo.Attribute("farm").Value
-                                       });
-
-                    var ImageLinks = new List<string>();
-
-                    foreach (var p in photos_list)
+                    if (photos != null)
                     {
-                        var url = "";
-                        if(String.IsNullOrEmpty(p.url))
-                        {
-                            url = BuildPhotoUrl(p.farm, p.server, p.id, p.secret);
-                        }
-                        else
-                        {
-                            url = p.url;
-                        }
+                        var photos_list = (from photo in photos
+                                           select new PhotosModel
+                                           {
+                                               Url = photo.Attribute("url_o")?.Value ?? String.Empty,
+                                               Id = photo.Attribute("id")?.Value ?? String.Empty,
+                                               Secret = photo.Attribute("secret")?.Value ?? String.Empty,
+                                               Server = photo.Attribute("server")?.Value ?? String.Empty,
+                                               Farm = photo.Attribute("farm")?.Value ?? String.Empty
+                                           });
 
-                        ImageLinks.Add(url);
+                        var ImageLinks = new List<string>();
+
+                        foreach (var p in photos_list)
+                        {
+                            var url = "";
+                            if (String.IsNullOrEmpty(p.Url))
+                            {
+                                url = BuildPhotoUrl(p.Farm, p.Server, p.Id, p.Secret);
+                            }
+                            else
+                            {
+                                url = p.Url;
+                            }
+
+                            ImageLinks.Add(url);
+                        }
+                        return ImageLinks;
                     }
-
-                    return ImageLinks;
                 }
             }
 
@@ -106,26 +109,30 @@ namespace FlickDownloader
                 {
                     var photos = doc.Descendants("photo");
 
-                    var photos_list = (from photo in photos
-                                       select new
-                                       {
-                                           id = photo.Attribute("id")?.Value ?? String.Empty,
-                                           owner = photo.Attribute("owner")?.Value ?? String.Empty,
-                                           secret = photo.Attribute("secret")?.Value ?? String.Empty,
-                                           server = photo.Attribute("server")?.Value ?? String.Empty,
-                                           farm = photo.Attribute("farm")?.Value ?? String.Empty,
-                                           title = photo.Attribute("title")?.Value ?? String.Empty,
-                                       });
-
-                    var ImageLinks = new List<string>();
-
-                    foreach (var p in photos_list)
+                    if (photos != null)
                     {
-                        var url = BuildPhotoUrl(p.farm, p.server, p.id, p.secret);
-                        ImageLinks.Add(url);
-                    }
 
-                    return ImageLinks;
+                        var photos_list = (from photo in photos
+                                           select new PhotosModel
+                                           {
+                                               Id = photo.Attribute("id")?.Value ?? String.Empty,
+                                               Owner = photo.Attribute("owner")?.Value ?? String.Empty,
+                                               Secret = photo.Attribute("secret")?.Value ?? String.Empty,
+                                               Server = photo.Attribute("server")?.Value ?? String.Empty,
+                                               Farm = photo.Attribute("farm")?.Value ?? String.Empty,
+                                               Title = photo.Attribute("title")?.Value ?? String.Empty,
+                                           });
+
+                        var ImageLinks = new List<string>();
+
+                        foreach (var p in photos_list)
+                        {
+                            var url = BuildPhotoUrl(p.Farm, p.Server, p.Id, p.Secret);
+                            ImageLinks.Add(url);
+                        }
+
+                        return ImageLinks;
+                    }
                 }
             }
 

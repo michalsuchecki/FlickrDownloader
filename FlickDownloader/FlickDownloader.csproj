@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="Flickr.cs" />
     <Compile Include="Global.cs" />
+    <Compile Include="Models\PhotosModel.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
