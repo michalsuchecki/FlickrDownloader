@@ -9,8 +9,23 @@ using System.Xml.Linq;
 
 namespace FlickDownloader
 {
+    enum FlickrImageSizes
+    {
+        Flickr_BiggestSize, // Default: download biggest image
+        Flickr_OriginalSize,
+        Flickr_LargeSize
+
+
+    };
+
     class Flickr
     {
+        Dictionary<FlickrImageSizes, string> _ImageSizeSufix = new Dictionary<FlickrImageSizes, string>()
+        {
+            { FlickrImageSizes.Flickr_LargeSize, "_b" },
+            { FlickrImageSizes.Flickr_OriginalSize, "_o" },
+        };
+
         public Flickr()
         {
         }
@@ -47,6 +62,33 @@ namespace FlickDownloader
         {
             //https://farm{farm-id}.staticflickr.com/{server-id}/{id}_{o-secret}_o.(jpg|gif|png)
             return String.Format($"https://farm{farm}.staticflickr.com/{server}/{id}_{secret}.jpg");
+        }
+
+        public IEnumerable<PhotoSizesModel> GetPhotoSizes(string photoId)
+        {
+            if (String.IsNullOrEmpty(photoId)) return null;
+
+            var request = FetchPhotoSizes(photoId);
+
+            var sizes = GetXMLData(request, "size");
+
+            if (sizes != null)
+            {
+                var items = (from size in sizes
+                             select new PhotoSizesModel
+                             {
+                                 Label = size.Attribute("label")?.Value ?? String.Empty,
+                                 Width = size.Attribute("width")?.Value ?? String.Empty,
+                                 Height = size.Attribute("height")?.Value ?? String.Empty,
+                                 Source = size.Attribute("source")?.Value ?? String.Empty,
+                                 Url = size.Attribute("url")?.Value ?? String.Empty,
+                                 Media = size.Attribute("media")?.Value ?? String.Empty,
+                             });
+
+                return items;
+            }
+
+            return null;
         }
 
         public IEnumerable<string> GetAlbumPhotos(string album_id)
@@ -97,46 +139,52 @@ namespace FlickDownloader
             return null;
         }
 
-        public IEnumerable<string> GetUserPhotos(string userId)
+        public IEnumerable<string> GetUserPhotos(string userId /*, FlickrImageSizes size = FlickrImageSizes.Flickr_BiggestSize*/)
         {
+            if (String.IsNullOrEmpty(userId)) return null;
+
             var request = FetchUserPhotos(userId);
 
-            if (!String.IsNullOrEmpty(request))
+            var data = GetXMLData(request, "photo");
+
+            if (data != null)
             {
-                var doc = GetXMLDocument(request);
+                var photos = (from d in data
+                              select new PhotosModel
+                              {
+                                  Id = d.Attribute("id")?.Value ?? String.Empty,
+                                  Owner = d.Attribute("owner")?.Value ?? String.Empty,
+                                  Secret = d.Attribute("secret")?.Value ?? String.Empty,
+                                  Server = d.Attribute("server")?.Value ?? String.Empty,
+                                  Farm = d.Attribute("farm")?.Value ?? String.Empty,
+                                  Title = d.Attribute("title")?.Value ?? String.Empty,
+                              });
 
-                if (doc != null)
+                List<string> urls = new List<string>();
+
+                if (photos != null)
                 {
-                    var photos = doc.Descendants("photo");
-
-                    if (photos != null)
+                    foreach (var photo in photos)
                     {
+                        var sizes = GetPhotoSizes(photo.Id);
 
-                        var photos_list = (from photo in photos
-                                           select new PhotosModel
-                                           {
-                                               Id = photo.Attribute("id")?.Value ?? String.Empty,
-                                               Owner = photo.Attribute("owner")?.Value ?? String.Empty,
-                                               Secret = photo.Attribute("secret")?.Value ?? String.Empty,
-                                               Server = photo.Attribute("server")?.Value ?? String.Empty,
-                                               Farm = photo.Attribute("farm")?.Value ?? String.Empty,
-                                               Title = photo.Attribute("title")?.Value ?? String.Empty,
-                                           });
+                        var url = (from s in sizes
+                                   select s.Source)
+                                  .LastOrDefault();
 
-                        var ImageLinks = new List<string>();
-
-                        foreach (var p in photos_list)
-                        {
-                            var url = BuildPhotoUrl(p.Farm, p.Server, p.Id, p.Secret);
-                            ImageLinks.Add(url);
-                        }
-
-                        return ImageLinks;
+                        urls.Add(url);
                     }
                 }
+                return urls;
             }
-
             return null;
+        }
+
+        private string FetchPhotoSizes(string photoId)
+        {
+            if (String.IsNullOrEmpty(photoId)) return "";
+
+            return BuildRequest("flickr.photos.getSizes", new Dictionary<string, string> { { "api_key", Global.FlickrApiKey }, { "photo_id", photoId } }); ;
         }
 
         private string FetchUserPhotos(string userId)
@@ -187,6 +235,17 @@ namespace FlickDownloader
                 }
             }
 
+            return null;
+        }
+
+        private IEnumerable<XElement> GetXMLData(string source, string elementName)
+        {
+            var doc = GetXMLDocument(source);
+            if (doc != null)
+            {
+                var result = doc.Descendants(elementName);
+                return result;
+            }
             return null;
         }
     }
