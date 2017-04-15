@@ -53,7 +53,7 @@ namespace FlickDownloader
 
         public IEnumerable<string> GetAlbumPhotos(string album_id)
         {
-            var request = getAlbumPhotos(album_id);
+            var request = FetchAlbumPhotos(album_id);
 
             if (!String.IsNullOrEmpty(request))
             {
@@ -78,7 +78,7 @@ namespace FlickDownloader
                     foreach (var p in photos_list)
                     {
                         var url = "";
-                        if(String.IsNullOrEmpty(p.url))
+                        if (String.IsNullOrEmpty(p.url))
                         {
                             url = BuildPhotoUrl(p.farm, p.server, p.id, p.secret);
                         }
@@ -97,8 +97,52 @@ namespace FlickDownloader
             return null;
         }
 
+        public IEnumerable<string> GetUserPhotos(string userId)
+        {
+            var request = FetchUserPhotos(userId);
 
-        private string getAlbumPhotos(string album_id)
+            if (!String.IsNullOrEmpty(request))
+            {
+                var doc = GetXMLDocument(request);
+
+                if (doc != null)
+                {
+                    var photos = doc.Descendants("photo");
+
+                    var photos_list = (from photo in photos
+                                       select new
+                                       {
+                                           id = photo.Attribute("id")?.Value ?? String.Empty,
+                                           owner = photo.Attribute("owner")?.Value ?? String.Empty,
+                                           secret = photo.Attribute("secret")?.Value ?? String.Empty,
+                                           server = photo.Attribute("server")?.Value ?? String.Empty,
+                                           farm = photo.Attribute("farm")?.Value ?? String.Empty,
+                                           title = photo.Attribute("title")?.Value ?? String.Empty,
+                                       });
+
+                    var ImageLinks = new List<string>();
+
+                    foreach (var p in photos_list)
+                    {
+                        var url = BuildPhotoUrl(p.farm, p.server, p.id, p.secret);
+                        ImageLinks.Add(url);
+                    }
+
+                    return ImageLinks;
+                }
+            }
+
+            return null;
+        }
+
+        private string FetchUserPhotos(string userId)
+        {
+            if (String.IsNullOrEmpty(userId)) return "";
+
+            return BuildRequest("flickr.people.getPhotos", new Dictionary<string, string> { { "api_key", Key }, { "user_id", userId } });
+        }
+
+        private string FetchAlbumPhotos(string album_id)
         {
             if (String.IsNullOrEmpty(album_id))
             {
