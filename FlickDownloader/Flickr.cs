@@ -10,9 +10,6 @@ namespace FlickDownloader
 {
     class Flickr
     {
-        private string Key = "ff7eff8dc769f13b5c59070f2420745c"; // ff7eff8dc769f13b5c59070f2420745c
-        private string ApiUrl = @"https://api.flickr.com/services/rest/";
-
         public Flickr()
         {
         }
@@ -28,7 +25,7 @@ namespace FlickDownloader
             {
                 var builder = new StringBuilder();
 
-                builder.Append(ApiUrl);
+                builder.Append(Global.FlickrApiUrl);
                 builder.Append("?method=");
                 builder.Append(method);
 
@@ -78,7 +75,7 @@ namespace FlickDownloader
                     foreach (var p in photos_list)
                     {
                         var url = "";
-                        if (String.IsNullOrEmpty(p.url))
+                        if(String.IsNullOrEmpty(p.url))
                         {
                             url = BuildPhotoUrl(p.farm, p.server, p.id, p.secret);
                         }
@@ -139,7 +136,7 @@ namespace FlickDownloader
         {
             if (String.IsNullOrEmpty(userId)) return "";
 
-            return BuildRequest("flickr.people.getPhotos", new Dictionary<string, string> { { "api_key", Key }, { "user_id", userId } });
+            return BuildRequest("flickr.people.getPhotos", new Dictionary<string, string> { { "api_key", Global.FlickrApiKey }, { "user_id", userId } });
         }
 
         private string FetchAlbumPhotos(string album_id)
@@ -151,7 +148,7 @@ namespace FlickDownloader
             }
             else
             {
-                return BuildRequest("flickr.photosets.getPhotos", new Dictionary<string, string> { { "api_key", Key }, { "photoset_id", album_id }, { "extras", "url_o" } /*, { "user_id", User }*/ });
+                return BuildRequest("flickr.photosets.getPhotos", new Dictionary<string, string> { { "api_key", Global.FlickrApiKey }, { "photoset_id", album_id }, { "extras", "url_o" } /*, { "user_id", User }*/ });
             }
         }
 
